@@ -16,7 +16,11 @@ var date =new Date();
 const item1=new Item({name:"todolist"});
 const item2=new Item({name:"hi"});
 const arr=[item1,item2];
-
+const listSchema={
+  name:String,
+  items:[itemsSchema]
+};
+const list=mongoose.model("List",listSchema);
 
 
 var options={
@@ -40,7 +44,28 @@ app.get("/",function(req,res){
         res.redirect("/");
     }
     else
-    res.render("index",{f:day,items:founditems,v:"list"});
+    res.render("index",{f:"today",items:founditems,v:"list"});
+
+  })
+
+})
+app.get("/:customListName",function(req,res){
+
+  const customListName=req.params.customListName;
+  list.findOne({name:customListName},function(err,foundlist){
+    if(!err){
+      if(!foundlist){
+        const li=new list({
+          name:customListName,
+          items:arr
+        });
+        li.save();
+        res.redirect("/"+customListName);
+      }
+      else{
+        res.render("index",{f:foundlist.name,items:foundlist.items,v:"list"});
+      }
+    }
 
   })
 
@@ -57,17 +82,21 @@ app.post("/delete",function(req,res){
 })
 app.post("/",function(req,res){
   const a=req.body.itam;
-const i =new Item({name:a});
-
-i.save();
-res.redirect("/");
+  const nam=req.body.button;
+    const i =new Item({name:a});
+    if (nam=== "day"){
+      i.save();
+      res.redirect("/");
+    } else {
+      list.findOne({name: nam}, function(err, foundList){
+        foundList.items.push(i);
+        foundList.save();
+        res.redirect("/" + nam);
+      });
+    }
   })
 
-app.get("/work",function(req,res){
 
-  res.render("index",{f:day,items:workitems,v:"work"});
-
-})
 
 app.listen(3000,function(){
 console.log("server on");
